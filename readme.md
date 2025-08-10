@@ -1,87 +1,127 @@
 
 
-# 📄 Solidity Smart Contract Project
+# 🖼 NFT Marketplace Smart Contract
 
-This repository contains a Solidity-based smart contract project. It is part of my ongoing work in building decentralized applications and experimenting with Ethereum-compatible blockchain development.
+A Solidity-based **NFT minting and marketplace** system with built-in royalties for creators and a marketplace fee for the owner. Users can mint NFTs, list them for sale, buy NFTs, and earn royalties on secondary sales.
 
 ---
 
 ## 📌 Overview
 
-* Written in **Solidity**.
-* Designed for **EVM-compatible networks** (e.g., Ethereum, Base, Polygon, etc.).
-* Project is **not yet verified** on the blockchain explorer — verification will be added in a future update.
+* **Mint NFTs** with a custom royalty percentage (up to 10%).
+* **List NFTs for Sale** with a set price.
+* **Buy NFTs** securely with ETH, ensuring marketplace fees and royalties are automatically distributed.
+* **Unlist NFTs** if the seller changes their mind.
+* **Owner Role:** Can set marketplace fee and collect revenue.
+
+**Deployed & Verified on Base Sepolia:**
+`0xcBCB09cd448Bc7c2Df0A8229b1e709EAf0AD3720`
+🔍 [View Verified Contract on BaseScan](https://sepolia.basescan.org/address/0xcBCB09cd448Bc7c2Df0A8229b1e709EAf0AD3720#code) ✅
 
 ---
 
-## ⚙️ Development Details
+## ⚙️ Features
 
-* **Language:** Solidity `^0.8.x`
-* **Frameworks/Tools:** Remix, Hardhat, or Foundry (depending on the project)
-* **Target Networks:** Ethereum testnets (e.g., Sepolia, Base Sepolia) or mainnet
+* **Royalty Support:** Automatic royalty payments to NFT creators on every sale.
+* **Marketplace Fee:** Default 2.5% (adjustable by owner, max 10%).
+* **NFT Metadata:** Stores `tokenURI` for each NFT.
+* **Secure Sales:** Requires exact payment to buy NFTs.
+* **Events:**
 
----
-
-## 🚀 Getting Started
-
-### Requirements
-
-* Node.js & npm (if using Hardhat/Foundry)
-* MetaMask or another Web3 wallet
-* Testnet ETH for deployment
-
-### Installation
-
-Clone the repository:
-
-```bash
-git clone <repository-url>
-cd <project-folder>
-```
-
-Install dependencies (if applicable):
-
-```bash
-npm install
-```
+  * `NFTMinted`
+  * `Listed`
+  * `Sold`
+  * `Unlisted`
 
 ---
 
 ## 🛠 Deployment
 
-You can deploy this contract via:
+### Requirements
 
-* **Remix** (web-based IDE)
-* **Hardhat** (local development environment)
-* **Foundry** (fast testing & deployment)
+* Solidity `^0.8.19`
+* Base Sepolia network
+* ETH balance for deployment gas fees
 
-Example (Hardhat):
+### Example Deployment
 
-```bash
-npx hardhat run scripts/deploy.js --network sepolia
+```solidity
+NFTMarketplace marketplace = new NFTMarketplace();
 ```
+
+---
+
+## 📜 Functions
+
+### **mintNFT(string \_tokenURI, uint256 \_royalty)**
+
+Mint a new NFT.
+
+* `_royalty` is in basis points (e.g., `100 = 1%`).
+* **Emits:** `NFTMinted`.
+
+---
+
+### **listNFT(uint256 \_tokenId, uint256 \_price)**
+
+List an owned NFT for sale.
+
+* Must be the token owner.
+* Price must be > 0.
+* **Emits:** `Listed`.
+
+---
+
+### **buyNFT(uint256 \_tokenId)** (payable)
+
+Buy a listed NFT.
+
+* Pays the seller (minus fees), marketplace owner, and NFT creator royalty.
+* Transfers NFT ownership.
+* **Emits:** `Sold`.
+
+---
+
+### **unlistNFT(uint256 \_tokenId)**
+
+Unlist an NFT from sale.
+
+* Must be the seller.
+* **Emits:** `Unlisted`.
+
+---
+
+### **ownerOf(uint256 \_tokenId)**
+
+Returns the current owner of the NFT.
+
+---
+
+### **tokenURI(uint256 \_tokenId)**
+
+Returns the metadata URI of the NFT.
+
+---
+
+### **setMarketplaceFee(uint256 \_fee)** (onlyOwner)
+
+Updates the marketplace fee (max 10%).
 
 ---
 
 ## 🧪 Testing
 
-Run tests locally (if provided):
+Run local tests using Hardhat:
 
 ```bash
+npm install
 npx hardhat test
 ```
 
 ---
 
-## 📜 Verification Status
-
-* **Current Status:** ❌ Not Verified
-* The contract will be verified in future updates once final deployment is complete.
-
----
-
 ## 📄 License
 
-MIT License – You are free to use, modify, and distribute this project.
+MIT License – Free to use and modify.
 
 ---
