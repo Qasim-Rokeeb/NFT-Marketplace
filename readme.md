@@ -1,32 +1,37 @@
 
-
 # 🖼 NFT Marketplace Smart Contract
 
-A Solidity-based **NFT minting and marketplace** system with built-in royalties for creators and a marketplace fee for the owner. Users can mint NFTs, list them for sale, buy NFTs, and earn royalties on secondary sales.
+A **Solidity-based** NFT minting and trading platform with:
+
+* **Creator royalties** on every sale
+* **Marketplace fee** for the owner
+* Full **on-chain NFT listings** and **secure purchase flow**
 
 ---
 
 ## 📌 Overview
 
-* **Mint NFTs** with a custom royalty percentage (up to 10%).
-* **List NFTs for Sale** with a set price.
-* **Buy NFTs** securely with ETH, ensuring marketplace fees and royalties are automatically distributed.
-* **Unlist NFTs** if the seller changes their mind.
-* **Owner Role:** Can set marketplace fee and collect revenue.
+This contract lets users:
 
-**Deployed & Verified on Base Sepolia:**
-`0xcBCB09cd448Bc7c2Df0A8229b1e709EAf0AD3720`
-🔍 [View Verified Contract on BaseScan](https://sepolia.basescan.org/address/0xcBCB09cd448Bc7c2Df0A8229b1e709EAf0AD3720#code) ✅
+* **Mint NFTs** with a custom royalty percentage (up to **10%**).
+* **List NFTs** for sale with a fixed ETH price.
+* **Buy NFTs** securely — with automatic distribution of marketplace fees and creator royalties.
+* **Unlist NFTs** anytime before they are sold.
+* **Owner privileges** to set marketplace fee and collect revenue.
+
+**Deployed on Base Sepolia Testnet**
+📜 Contract Address: `0xcBCB09cd448Bc7c2Df0A8229b1e709EAf0AD3720`
+🔍 [View on BaseScan](https://sepolia.basescan.org/address/0xcBCB09cd448Bc7c2Df0A8229b1e709EAf0AD3720#code) ✅
 
 ---
 
-## ⚙️ Features
+## ⚙ Features
 
-* **Royalty Support:** Automatic royalty payments to NFT creators on every sale.
-* **Marketplace Fee:** Default 2.5% (adjustable by owner, max 10%).
-* **NFT Metadata:** Stores `tokenURI` for each NFT.
-* **Secure Sales:** Requires exact payment to buy NFTs.
-* **Events:**
+* **Royalty Support** → Automatic creator royalty on every sale.
+* **Marketplace Fee** → Default 2.5%, owner-adjustable (max 10%).
+* **NFT Metadata** → Stores `tokenURI` for off-chain metadata.
+* **Secure Sales** → Exact payment required to purchase.
+* **Event Logging** → Easy tracking with:
 
   * `NFTMinted`
   * `Listed`
@@ -40,8 +45,8 @@ A Solidity-based **NFT minting and marketplace** system with built-in royalties 
 ### Requirements
 
 * Solidity `^0.8.19`
-* Base Sepolia network
-* ETH balance for deployment gas fees
+* Base Sepolia testnet
+* ETH for deployment gas fees
 
 ### Example Deployment
 
@@ -49,69 +54,87 @@ A Solidity-based **NFT minting and marketplace** system with built-in royalties 
 NFTMarketplace marketplace = new NFTMarketplace();
 ```
 
+**On deployment:**
+
+* The deployer becomes the **owner**.
+* Marketplace fee defaults to **2.5%**.
+
 ---
 
 ## 📜 Functions
 
-### **mintNFT(string \_tokenURI, uint256 \_royalty)**
+### Mint an NFT
 
-Mint a new NFT.
+```solidity
+mintNFT(string memory _tokenURI, uint256 _royalty)
+```
 
-* `_royalty` is in basis points (e.g., `100 = 1%`).
-* **Emits:** `NFTMinted`.
-
----
-
-### **listNFT(uint256 \_tokenId, uint256 \_price)**
-
-List an owned NFT for sale.
-
-* Must be the token owner.
-* Price must be > 0.
-* **Emits:** `Listed`.
+* `_royalty` in basis points (`100 = 1%`, max `1000 = 10%`).
+* Emits: `NFTMinted`.
 
 ---
 
-### **buyNFT(uint256 \_tokenId)** (payable)
+### List an NFT
 
-Buy a listed NFT.
+```solidity
+listNFT(uint256 _tokenId, uint256 _price)
+```
 
-* Pays the seller (minus fees), marketplace owner, and NFT creator royalty.
+* Must be NFT owner.
+* Price > 0 required.
+* Emits: `Listed`.
+
+---
+
+### Buy an NFT
+
+```solidity
+buyNFT(uint256 _tokenId) payable
+```
+
+* Exact ETH amount required.
+* Distributes:
+
+  * Seller payment (minus fees)
+  * Creator royalty
+  * Marketplace fee
 * Transfers NFT ownership.
-* **Emits:** `Sold`.
+* Emits: `Sold`.
 
 ---
 
-### **unlistNFT(uint256 \_tokenId)**
+### Unlist an NFT
 
-Unlist an NFT from sale.
+```solidity
+unlistNFT(uint256 _tokenId)
+```
 
 * Must be the seller.
-* **Emits:** `Unlisted`.
+* Emits: `Unlisted`.
 
 ---
 
-### **ownerOf(uint256 \_tokenId)**
+### View Functions
 
-Returns the current owner of the NFT.
-
----
-
-### **tokenURI(uint256 \_tokenId)**
-
-Returns the metadata URI of the NFT.
+* `ownerOf(uint256 _tokenId)` → Current owner address.
+* `tokenURI(uint256 _tokenId)` → Metadata URI.
 
 ---
 
-### **setMarketplaceFee(uint256 \_fee)** (onlyOwner)
+### Admin Function
 
-Updates the marketplace fee (max 10%).
+```solidity
+setMarketplaceFee(uint256 _fee)
+```
+
+* Only callable by owner.
+* Max `1000` (10%).
 
 ---
 
 ## 🧪 Testing
 
-Run local tests using Hardhat:
+Using Hardhat:
 
 ```bash
 npm install
@@ -120,8 +143,17 @@ npx hardhat test
 
 ---
 
-## 📄 License
+## 🔒 Security Notes
 
-MIT License – Free to use and modify.
+* Payments use **`transfer`** for ETH — can be updated to **`call`** for gas stipend flexibility.
+* No ERC721 transfer approval — ownership is updated in contract storage.
 
 ---
+
+## 📄 License
+
+MIT — free to use and modify.
+
+---
+
+
