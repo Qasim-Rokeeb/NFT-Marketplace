@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+/**
+ * @title NFTMarketplace
+ * @notice Minimal marketplace to mint, list, buy, and unlist NFTs with creator royalties and marketplace fees.
+ * @dev Uses internal ownership tracking (non-ERC721) and basis points for fees/royalties.
+ */
+
 contract NFTMarketplace {
-    // Represents a sale listing for an NFT
+    // ====== Types ======
+    /// @dev Represents a sale listing for an NFT.
     struct Listing {
         address seller;   // Address of the NFT owner who listed it
         uint256 tokenId;  // Token ID of the listed NFT
@@ -10,7 +17,7 @@ contract NFTMarketplace {
         bool active;      // Whether the listing is active
     }
     
-    // Represents an NFT's metadata and royalty info
+    /// @dev Represents an NFT's metadata and royalty info.
     struct NFT {
         uint256 tokenId;      // Unique identifier for the NFT
         address creator;      // Original creator (receives royalties)
@@ -18,40 +25,61 @@ contract NFTMarketplace {
         uint256 royalty;      // Royalty fee in basis points (e.g., 100 = 1%)
     }
     
-    // Mapping from tokenId to NFT details
+    // ====== Storage ======
+    /// @notice NFT details indexed by `tokenId`.
     mapping(uint256 => NFT) public nfts;
 
-    // Mapping from tokenId to its current sale listing
+    /// @notice Current active (or last known) listing indexed by `tokenId`.
     mapping(uint256 => Listing) public listings;
 
-    // Mapping from tokenId to current owner address
+    /// @notice Current owner address for each `tokenId`.
     mapping(uint256 => address) public tokenOwners;
 
-    // Mapping from owner address to count of owned NFTs
+    /// @notice Balance of NFTs per owner address.
     mapping(address => uint256) public balances;
 
-    // Mapping from tokenId to an approved address for transfers (ERC721-like)
+    /// @dev Approved address for a `tokenId` (placeholder; ERC721-like, unused here).
     mapping(uint256 => address) public tokenApprovals;
 
-    // Mapping from owner to operator approvals (ERC721-like)
+    /// @dev Operator approvals per owner (placeholder; ERC721-like, unused here).
     mapping(address => mapping(address => bool)) public operatorApprovals;
     
-    uint256 public nextTokenId;          // Next token ID to assign
-    uint256 public marketplaceFee = 250; // Marketplace fee in basis points (250 = 2.5%)
-    address public owner;                // Marketplace contract owner
+    /// @notice Next token ID to assign when minting.
+    uint256 public nextTokenId;          
+    /// @notice Marketplace fee in basis points (250 = 2.5%).
+    uint256 public marketplaceFee = 250; 
+    /// @notice Marketplace contract owner.
+    address public owner;                
     
-    // Events for tracking actions
+    // ====== Events ======
+    /// @notice Emitted when a new NFT is minted.
+    /// @param tokenId Newly minted token ID.
+    /// @param creator Address of the creator/minter.
+    /// @param tokenURI Metadata URI associated with the NFT.
     event NFTMinted(uint256 indexed tokenId, address indexed creator, string tokenURI);
+    /// @notice Emitted when an NFT is listed for sale.
+    /// @param tokenId Token ID listed.
+    /// @param seller Address listing the NFT.
+    /// @param price Sale price in wei.
     event Listed(uint256 indexed tokenId, address indexed seller, uint256 price);
+    /// @notice Emitted when an NFT is sold.
+    /// @param tokenId Token ID sold.
+    /// @param buyer Address purchasing the NFT.
+    /// @param seller Address selling the NFT.
+    /// @param price Sale price paid in wei.
     event Sold(uint256 indexed tokenId, address indexed buyer, address indexed seller, uint256 price);
+    /// @notice Emitted when an NFT listing is canceled or deactivated.
+    /// @param tokenId Token ID unlisted.
     event Unlisted(uint256 indexed tokenId);
     
-    // Restricts function access to contract owner
+    // ====== Modifiers ======
+    /// @dev Restricts function access to the contract owner.
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner");
         _;
     }
     
+    // ====== Constructor ======
     constructor() {
         owner = msg.sender;
         nextTokenId = 1; // Start token IDs from 1
@@ -61,6 +89,7 @@ contract NFTMarketplace {
      * @notice Mint a new NFT
      * @param _tokenURI Metadata URI for the NFT
      * @param _royalty Royalty in basis points (max 10%)
+     * @dev Assigns ownership to the minter and records creator/royalty info.
      */
     function mintNFT(string memory _tokenURI, uint256 _royalty) external {
         require(_royalty <= 1000, "Royalty too high"); // Limit to 10%
@@ -87,6 +116,7 @@ contract NFTMarketplace {
      * @notice List an owned NFT for sale
      * @param _tokenId The NFT to list
      * @param _price Sale price in wei
+     * @dev Overwrites any existing listing for the token.
      */
     function listNFT(uint256 _tokenId, uint256 _price) external {
         require(tokenOwners[_tokenId] == msg.sender, "Not owner");
@@ -106,6 +136,7 @@ contract NFTMarketplace {
     /**
      * @notice Purchase an NFT from an active listing
      * @param _tokenId The NFT to buy
+     * @dev Distributes marketplace fee and creator royalty; marks listing inactive.
      */
     function buyNFT(uint256 _tokenId) external payable {
         Listing storage listing = listings[_tokenId];
@@ -139,6 +170,7 @@ contract NFTMarketplace {
     /**
      * @notice Cancel an active listing
      * @param _tokenId The NFT to unlist
+     * @dev Marks the listing as inactive without deleting it.
      */
     function unlistNFT(uint256 _tokenId) external {
         require(listings[_tokenId].seller == msg.sender, "Not seller");
@@ -151,6 +183,7 @@ contract NFTMarketplace {
     /**
      * @notice Get the owner of an NFT
      * @param _tokenId The NFT ID
+     * @return The address of the current owner for the given `tokenId`.
      */
     function ownerOf(uint256 _tokenId) external view returns (address) {
         return tokenOwners[_tokenId];
@@ -159,6 +192,7 @@ contract NFTMarketplace {
     /**
      * @notice Get the metadata URI for an NFT
      * @param _tokenId The NFT ID
+     * @return The metadata URI associated with the given `tokenId`.
      */
     function tokenURI(uint256 _tokenId) external view returns (string memory) {
         return nfts[_tokenId].tokenURI;
@@ -167,6 +201,7 @@ contract NFTMarketplace {
     /**
      * @notice Update the marketplace fee
      * @param _fee New fee in basis points (max 10%)
+     * @dev Fee is applied on sales and sent to the contract owner.
      */
     function setMarketplaceFee(uint256 _fee) external onlyOwner {
         require(_fee <= 1000, "Fee too high"); // Limit to 10%
